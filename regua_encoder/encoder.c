@@ -28,8 +28,12 @@ char info_response[40];
 volatile uint32_t cnt_encoder_role = 0;
 char flag_pistao = PISTAO_RECUADO;
 
-bool inicia_para_moviento_avanco = false;
-bool inicia_para_moviento_recuo = false;
+//
+#define STATUS_HAB 1
+#define STATUS_DESABI 2
+#define STATUS_DESATI 0
+char inicia_para_moviento_avanco = STATUS_DESATI;
+char inicia_para_moviento_recuo = STATUS_DESATI;
 bool status_encoder = false;
 bool movimento_encoder = true;
 
@@ -53,14 +57,24 @@ void interrupt_handler() {
 void core1_timer(){
     while(true){
         sleep_ms(1);
-        if(inicia_para_moviento_avanco == true){// se iniciou movimento
+        if(inicia_para_moviento_avanco == STATUS_HAB){// se iniciou movimento
             cnt_timer_avanco+=1;// conta tempo, em ms, do tempo de avanço
             if( movimento_encoder == true ){// se encoder estiver em movimento 
                 movimento_encoder = false; 
                 }
             else{
-                inicia_para_moviento_avanco = false;// encoder estiver parado, para variavel de inicio de movimento
+                inicia_para_moviento_avanco = STATUS_DESABI;// encoder estiver parado, para variavel de inicio de movimento
                 encoder_role_avanco = cnt_encoder_role;
+                }
+        }
+        if(inicia_para_moviento_recuo == STATUS_HAB){// se iniciou movimento
+            cnt_timer_recuo+=1;// conta tempo, em ms, do tempo de recuo
+            if( movimento_encoder == true ){// se encoder estiver em movimento 
+                movimento_encoder = false;//refresha
+                }
+            else{
+                inicia_para_moviento_recuo = STATUS_DESABI;// encoder estiver parado, para variavel de inicio de movimento
+                encoder_role_recuo = cnt_encoder_role;
                 }
         }
     }
@@ -122,23 +136,45 @@ void rs485_communication() {
             movimento_encoder = true;//Habilita a variável de movimento previamente. 
             cnt_encoder_role = 0; //zera o contador de encoder
             sleep_ms(DELAY_AV_RE);//espera-se um tempo para estabilizar
-            inicia_para_moviento_avanco = true;// Habilita movimento de avanço
+            inicia_para_moviento_avanco = STATUS_HAB;// Habilita movimento de avanço
+            inicia_para_moviento_recuo= STATUS_DESATI;// Desativa movimento de recuo
             encoder_role_avanco=0;//Zera variáveis de medidas
             cnt_timer_avanco=0;
             break;
 
             case 6://Inicia madida de recuo
             pistao(0);//Recua pistão
-            sleep_ms(2000);//Aguarda um tempo
+            movimento_encoder = true;//Habilita a variável de movimento previamente.
             cnt_encoder_role = 0; //zera o contador de encoder
+            sleep_ms(DELAY_AV_RE);//espera-se um tempo para estabilizar
+            inicia_para_moviento_recuo= STATUS_HAB;// Habilita movimento de recuo
+            inicia_para_moviento_avanco = STATUS_DESATI;// Habilita movimento de avanço
+            encoder_role_recuo=0;//Zera variáveis de medidas
+            cnt_timer_recuo=0;
+            break;
+
+            case 7:
+            pistao(0);//Recua pistão
+            sleep_ms(3000);//espera-se um tempo para recuar
+            movimento_encoder = true;//Habilita a variável de movimento previamente.
+            cnt_encoder_role = 0; //zera o contador de encoder
+            inicia_para_moviento_recuo= STATUS_DESATI;// Desativa movimentos
+            inicia_para_moviento_avanco = STATUS_DESATI;// Desativa movimentos
+            encoder_role_recuo=0;//Zera variáveis de medidas
+            encoder_role_avanco=0;//Zera variáveis de medidas
+            cnt_timer_recuo=0;
+            cnt_timer_avanco=0;
             break;
 
             default:
-                if( inicia_para_moviento_avanco == false ){// Se 
+                if( inicia_para_moviento_avanco == STATUS_DESABI){// Se 
 
                     snprintf(info_response, sizeof(info_response), "%ld;%ld\n", encoder_role_avanco,(cnt_timer_avanco));
                     uart_puts(UART_ID, info_response);
 
+                }else if(inicia_para_moviento_recuo == STATUS_DESABI){
+                    snprintf(info_response, sizeof(info_response), "%ld;%ld\n", encoder_role_recuo,(cnt_timer_recuo));
+                    uart_puts(UART_ID, info_response);
                 }else{
                     snprintf(info_response, sizeof(info_response), "%s\n", "-3\n");//indica que ainda não terminou a medida
                     uart_puts(UART_ID, info_response);

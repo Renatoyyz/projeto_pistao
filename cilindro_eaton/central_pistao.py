@@ -87,13 +87,18 @@ try:
     habilita_rotina=False
     leitura_avanco=True
     leitura_recuo=False
+
+    m_avanco = 0.0
+    t_avanco = 0
+    m_recuo = 0.0
+    t_recuo = 0
     while True:
         # Exemplo: envia ID 0x01, comando 0xAA e recebe dados
         id_enviar = 0x01
         # comando_enviar = 0x02
         if GPIO.input(22) == True:
             habilita_rotina = False
-            comando_enviar = input("Digite Comando\n1-Avanço pistão\n2-Recuo Pistão\n3-Calibração Val. min.\n4-Calibração Val. Max.\nLigar Botão e pressionar enter inicia a rotina\n")
+            comando_enviar = input("Digite Comando\n1-Avanço pistão\n2-Recuo Pistão\n3-Calibração Val. min.\n4-Calibração Val. Max.\nLigar Botão e pressionar \"Enter\", inicia a rotina\nMas antes enviar comando 7 para preparar rotina.\n")
             if comando_enviar != "":
                 dados_recebidos = enviar_e_receber_dados(id_enviar, int(comando_enviar))
             else:    
@@ -103,7 +108,7 @@ try:
             
         else:
             habilita_rotina = True
-            comando_enviar = "7" #Comando para aquisição de medidas
+            comando_enviar = "8" #Comando para aquisição de medidas
             dados_recebidos = enviar_e_receber_dados(id_enviar, int(comando_enviar))
 
         # Exibe os dados recebidos
@@ -133,29 +138,44 @@ try:
                     leitura_recuo = True
 
                 
-                if int(comando_enviar) == 7:
+                if int(comando_enviar) == 8:
                     
                     if leitura_avanco == True:
                         if (loc != b'-1\n') and (loc != b'-2\n') and (loc != b'-3\n'):
-                            data_now = datetime.now()
                             dados_recebidos = dados_recebidos.rstrip(b'\n')
                             dados_recebidos = bytes.decode(dados_recebidos)
                             valores = dados_recebidos.strip().split(";")
                             if len(valores) > 1:
                                 milimetro_avanco = valores[0]
                                 tempo_avanco = valores[1]
-                                m_avanco = valor_milimetro(int(milimetro_avanco))
-                                t_avanco = int(tempo_avanco)
                                 if int(milimetro_avanco) > 0 and int(tempo_avanco) > 0:
-                                    dados_recebidos = str(m_avanco) + ';' + str(t_avanco) + ';' + str(data_now.hour) + '-' + str(data_now.minute) + '-' + str(data_now.second) + '-' + str(data_now.microsecond // 1000)
-                                    salvar_em_csv(dados_recebidos)
-                                    enviar_e_receber_dados(id_enviar, 6)
+                                    m_avanco = valor_milimetro(int(milimetro_avanco))
+                                    t_avanco = int(tempo_avanco)
+                                    enviar_e_receber_dados(id_enviar, 6)# Envia comando para recuar
                                     leitura_avanco = False
                                     leitura_recuo = True
                         else:
                             print('Rotina não habilitada\nEnviar comando 5.\n')
-                    if leitura_recuo == True:
-                        print("Medida de avanço concluída")
+                    elif leitura_recuo == True:
+                        if (loc != b'-1\n') and (loc != b'-2\n') and (loc != b'-3\n'):
+                            data_now = datetime.now()
+                            dados_recebidos = dados_recebidos.rstrip(b'\n')
+                            dados_recebidos = bytes.decode(dados_recebidos)
+                            valores = dados_recebidos.strip().split(";")
+                            if len(valores) > 1:
+                                milimetro_recuo = valores[0]
+                                tempo_recuo = valores[1]
+                                
+                                if int(milimetro_recuo) > 0 and int(tempo_recuo) > 0:
+                                    m_recuo = valor_milimetro(int(milimetro_recuo))
+                                    t_recuo = int(tempo_recuo)
+                                    dados_recebidos = str(m_avanco) + ';' + str(t_avanco) + ';' + str(m_recuo) + ';' + str(t_recuo) + ';' + str(data_now.hour) + ':' + str(data_now.minute) + ':' + str(data_now.second) + ':' + str(data_now.microsecond // 1000)
+                                    salvar_em_csv(dados_recebidos)
+                                    enviar_e_receber_dados(id_enviar, 5)# Envia comando para avanço
+                                    leitura_avanco = True
+                                    leitura_recuo = False
+                        else:
+                            print('Rotina não habilitada\nEnviar comando 5.\n')
             time.sleep(1)  # Aguarda 1 segundo antes de enviar novamente
         else:
             time.sleep(1)  # Aguarda 1 segundo antes de enviar novamente
