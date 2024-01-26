@@ -1,0 +1,13 @@
+# Target labels
+ ELF2UF2Build
+# Source files and their labels
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/CMakeFiles/ELF2UF2Build
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/CMakeFiles/ELF2UF2Build.rule
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/CMakeFiles/ELF2UF2Build-complete.rule
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-build.rule
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-configure.rule
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-download.rule
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-install.rule
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-mkdir.rule
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-patch.rule
+/home/desenvolvimento/pico/projeto_pistao/regua_encoder/build/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-update.rule
