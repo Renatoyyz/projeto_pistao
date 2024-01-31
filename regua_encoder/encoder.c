@@ -22,7 +22,7 @@
 #define PISTAO_AVANCADO 1
 
 //Constante para definir um delay para o inicio do avanço ou recuo do pistão
-#define DELAY_AV_RE 1000
+#define DELAY_AV_RE 100
 
 char info_response[40];
 volatile uint32_t cnt_encoder_role = 0;
@@ -56,15 +56,22 @@ void interrupt_handler() {
 
 void core1_timer(){
     while(true){
-        sleep_ms(1);
+        // sleep_ms(3);
+        sleep_us(500);
         if(inicia_para_moviento_avanco == STATUS_HAB){// se iniciou movimento
             cnt_timer_avanco+=1;// conta tempo, em ms, do tempo de avanço
             if( movimento_encoder == true ){// se encoder estiver em movimento 
                 movimento_encoder = false; 
                 }
             else{
-                inicia_para_moviento_avanco = STATUS_DESABI;// encoder estiver parado, para variavel de inicio de movimento
-                encoder_role_avanco = cnt_encoder_role;
+                    // inicia_para_moviento_avanco = STATUS_DESABI;// encoder estiver parado, para variavel de inicio de movimento
+                    // encoder_role_avanco = cnt_encoder_role;
+                sleep_ms(10);
+                if(movimento_encoder==false){
+                    inicia_para_moviento_avanco = STATUS_DESABI;// encoder estiver parado, para variavel de inicio de movimento
+                    encoder_role_avanco = cnt_encoder_role;
+                }else{movimento_encoder = false;}
+                
                 }
         }
         if(inicia_para_moviento_recuo == STATUS_HAB){// se iniciou movimento
@@ -73,10 +80,17 @@ void core1_timer(){
                 movimento_encoder = false;//refresha
                 }
             else{
-                inicia_para_moviento_recuo = STATUS_DESABI;// encoder estiver parado, para variavel de inicio de movimento
-                encoder_role_recuo = cnt_encoder_role;
+                    // inicia_para_moviento_recuo = STATUS_DESABI;// encoder estiver parado, para variavel de inicio de movimento
+                    // encoder_role_recuo = cnt_encoder_role;
+                sleep_ms(10);
+                if(movimento_encoder==false){
+                    inicia_para_moviento_recuo = STATUS_DESABI;// encoder estiver parado, para variavel de inicio de movimento
+                    encoder_role_recuo = cnt_encoder_role;
+                }else{movimento_encoder = false;}
                 }
         }
+    // sleep_ms(1);
+    sleep_us(500);
     }
 }
 
@@ -132,10 +146,12 @@ void rs485_communication() {
             break;
 
             case 5://Iniciar medida de avanço
-            pistao(1);//Avança pistão
-            movimento_encoder = true;//Habilita a variável de movimento previamente. 
+            inicia_para_moviento_avanco = STATUS_DESATI;
+            inicia_para_moviento_recuo = STATUS_DESATI;
+            pistao(1);//Avança pistão 
             cnt_encoder_role = 0; //zera o contador de encoder
             sleep_ms(DELAY_AV_RE);//espera-se um tempo para estabilizar
+            movimento_encoder = true;//Habilita a variável de movimento previamente.
             inicia_para_moviento_avanco = STATUS_HAB;// Habilita movimento de avanço
             inicia_para_moviento_recuo= STATUS_DESATI;// Desativa movimento de recuo
             encoder_role_avanco=0;//Zera variáveis de medidas
@@ -143,10 +159,12 @@ void rs485_communication() {
             break;
 
             case 6://Inicia madida de recuo
+            inicia_para_moviento_avanco = STATUS_DESATI;
+            inicia_para_moviento_recuo = STATUS_DESATI;
             pistao(0);//Recua pistão
-            movimento_encoder = true;//Habilita a variável de movimento previamente.
             cnt_encoder_role = 0; //zera o contador de encoder
             sleep_ms(DELAY_AV_RE);//espera-se um tempo para estabilizar
+            movimento_encoder = true;//Habilita a variável de movimento previamente.
             inicia_para_moviento_recuo= STATUS_HAB;// Habilita movimento de recuo
             inicia_para_moviento_avanco = STATUS_DESATI;// Habilita movimento de avanço
             encoder_role_recuo=0;//Zera variáveis de medidas
@@ -169,11 +187,11 @@ void rs485_communication() {
             default:
                 if( inicia_para_moviento_avanco == STATUS_DESABI){// Se 
 
-                    snprintf(info_response, sizeof(info_response), "%ld;%ld\n", encoder_role_avanco,(cnt_timer_avanco));
+                    snprintf(info_response, sizeof(info_response), "%ld;%ld\n", encoder_role_avanco,(cnt_timer_avanco*1));
                     uart_puts(UART_ID, info_response);
 
                 }else if(inicia_para_moviento_recuo == STATUS_DESABI){
-                    snprintf(info_response, sizeof(info_response), "%ld;%ld\n", encoder_role_recuo,(cnt_timer_recuo));
+                    snprintf(info_response, sizeof(info_response), "%ld;%ld\n", encoder_role_recuo,(cnt_timer_recuo*1));
                     uart_puts(UART_ID, info_response);
                 }else{
                     snprintf(info_response, sizeof(info_response), "%s\n", "-3\n");//indica que ainda não terminou a medida
@@ -191,8 +209,8 @@ int main() {
     uint32_t desired_frequency = 200000000; // Exemplo: 200 MHz
     // Configura o sistema para usar a nova frequência
     bool clk_ok = false;
-    //clk_ok = set_sys_clock_khz(desired_frequency / 1000, true);
-    clk_ok = true;
+    clk_ok = set_sys_clock_khz(desired_frequency / 1000, true);
+    // clk_ok = true;
 
     // Inicialização dos pinos
     // Inicializar o pino do LED
